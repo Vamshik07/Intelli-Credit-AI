@@ -1,0 +1,14 @@
+streamlit
+pandas
+scikit-learn
+langchain
+langgraph
+pypdf
+python-docx
+requests
+beautifulsoup4
+google-generativeai
+joblib
+fastapi
+uvicorn[standard]
+python-multipart
