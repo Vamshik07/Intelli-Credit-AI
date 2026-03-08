@@ -10,14 +10,7 @@ const pythonPath = isWindows
   ? path.join(root, ".venv", "Scripts", "python.exe")
   : path.join(root, ".venv", "bin", "python");
 
-const reactScriptsPath = path.join(
-  root,
-  "frontend",
-  "node_modules",
-  "react-scripts",
-  "bin",
-  "react-scripts.js"
-);
+const npmCommand = "npm";
 
 function getFreePort(preferredPort) {
   return new Promise((resolve) => {
@@ -63,15 +56,16 @@ async function start() {
   );
 
   const frontend = spawn(
-    process.execPath,
-    [reactScriptsPath, "start"],
+    npmCommand,
+    ["run", "dev", "--", "--host", "127.0.0.1", "--port", "3000"],
     {
+      shell: isWindows,
       stdio: "inherit",
       cwd: path.join(root, "frontend"),
       env: {
         ...process.env,
         BROWSER: "none",
-        REACT_APP_API_BASE_URL: backendUrl,
+        VITE_API_BASE_URL: backendUrl,
       },
     }
   );
