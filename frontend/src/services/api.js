@@ -48,3 +48,8 @@ export async function fetchHealth() {
   const { data } = await api.get("/");
   return data;
 }
+
+export async function fetchCompanyStats() {
+  const { data } = await api.get("/api/company/stats");
+  return data;
+}

@@ -40,6 +40,7 @@ def run_analysis(payload: AnalysisRequest):
     financial = result.get("financial_metrics", {})
     risk = result.get("risk", {})
     recommendation = result.get("recommendation", {})
+    structured_synthesis = result.get("structured_synthesis", {})
     litigation = result.get("litigation", {})
     reports = result.get("reports", {})
 
@@ -108,6 +109,7 @@ def run_analysis(payload: AnalysisRequest):
             "news_signals": result.get("research", {}).get("headlines", []),
             "regulatory_alerts": result.get("litigation", {}).get("signals", []),
         },
+        "structured_synthesis": structured_synthesis,
         "risk_scores": {
             "financial_strength": risk.get("financial_score", 0.0),
             "legal_strength": risk.get("legal_score", 0.0),
@@ -115,6 +117,8 @@ def run_analysis(payload: AnalysisRequest):
             "industry_strength": risk.get("industry_score", 0.0),
             "operational_strength": risk.get("operational_score", 0.0),
             "weighted_final_score": risk.get("final_score", 0.0),
+            "probability_of_default": risk.get("probability_of_default", 0.0),
+            "model_confidence": risk.get("model_confidence", 0.0),
         },
         "risk": risk,
         "recommendation": recommendation,
@@ -128,6 +132,11 @@ def run_analysis(payload: AnalysisRequest):
             "summary": "Loan decision is derived from financial, legal, promoter, industry, and operational components with primary-insight penalty adjustments.",
             "reasons": risk.get("reasons", []),
             "components": risk.get("components", {}),
+            "structured_synthesis": {
+                "discrepancy_flags": structured_synthesis.get("discrepancy_flags", []),
+                "cross_verification": structured_synthesis.get("cross_verification", {}),
+                "indian_context_checks": structured_synthesis.get("indian_context_checks", {}),
+            },
             "inputs_used": {
                 "document_count": len(documents),
                 "news_headline_count": len(result.get("research", {}).get("headlines", [])),

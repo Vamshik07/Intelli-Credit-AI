@@ -43,7 +43,7 @@ def _risk_category(final_score: float) -> str:
     return "High Risk"
 
 
-def _format_runtime_context(company: dict, risk: dict, recommendation: dict, research: dict, observations: str) -> str:
+def _format_runtime_context(company: dict, risk: dict, recommendation: dict, structured_synthesis: dict, research: dict, observations: str) -> str:
     financial_score = risk.get("financial_score", 0.0)
     legal_score = risk.get("legal_score", 0.0)
     promoter_score = risk.get("promoter_score", 0.0)
@@ -54,6 +54,7 @@ def _format_runtime_context(company: dict, risk: dict, recommendation: dict, res
     company_text = _flatten_dict("Company", company)
     risk_text = _flatten_dict("Risk Score Inputs", risk)
     recommendation_text = _flatten_dict("Loan Recommendation Inputs", recommendation)
+    synthesis_text = _flatten_dict("Structured Synthesis", structured_synthesis)
     research_text = _flatten_dict("Research Intelligence", research)
 
     return (
@@ -61,6 +62,7 @@ def _format_runtime_context(company: dict, risk: dict, recommendation: dict, res
         f"{company_text}\n\n"
         f"{risk_text}\n\n"
         f"{recommendation_text}\n\n"
+        f"{synthesis_text}\n\n"
         f"{research_text}\n\n"
         "Normalized Score Breakdown:\n"
         f"- Financial Strength: {financial_score}\n"
@@ -74,7 +76,7 @@ def _format_runtime_context(company: dict, risk: dict, recommendation: dict, res
     )
 
 
-def _fallback_cam_text(company: dict, risk: dict, recommendation: dict, research: dict, observations: str) -> str:
+def _fallback_cam_text(company: dict, risk: dict, recommendation: dict, structured_synthesis: dict, research: dict, observations: str) -> str:
     company_name = company.get("name", "Unknown Company")
     cin = company.get("cin", "Not Available")
     industry = company.get("industry", "Not Available")
@@ -84,6 +86,7 @@ def _fallback_cam_text(company: dict, risk: dict, recommendation: dict, research
     suggested_rate = _format_number(recommendation.get("suggested_interest_rate", 0.0))
     risk_category = _risk_category(final_score)
     components = risk.get("components", {}) if isinstance(risk.get("components", {}), dict) else {}
+    discrepancy_flags = structured_synthesis.get("discrepancy_flags", []) if isinstance(structured_synthesis, dict) else []
 
     return f"""# CREDIT APPRAISAL MEMO
 
@@ -193,6 +196,10 @@ The decision is explained through the following credit-committee focused factors
 - industry and operating environment volatility affecting earnings stability;
 - credit officer observations incorporated into final weighting and narrative judgment.
 
+Structured synthesis and India-context checks:
+- discrepancy flags: {', '.join(discrepancy_flags) if discrepancy_flags else 'none detected'}
+- GSTR-2A vs 3B and GST/ITR/bank cross-verification signals are included in the scoring rationale.
+
 Additional analyst narrative:
 {observations or 'No additional narrative observations were provided by the credit officer at the time of analysis.'}
 
@@ -200,8 +207,8 @@ This memo is intended for formal credit committee review and should be read toge
 """
 
 
-def _generate_cam_text(company: dict, risk: dict, recommendation: dict, research: dict, observations: str) -> str:
-    prompt = _load_cam_prompt_template() + _format_runtime_context(company, risk, recommendation, research, observations)
+def _generate_cam_text(company: dict, risk: dict, recommendation: dict, structured_synthesis: dict, research: dict, observations: str) -> str:
+    prompt = _load_cam_prompt_template() + _format_runtime_context(company, risk, recommendation, structured_synthesis, research, observations)
     prompt += (
         "\n\nMANDATORY ENFORCEMENT:\n"
         "- Minimum length 1200 words.\n"
@@ -212,11 +219,11 @@ def _generate_cam_text(company: dict, risk: dict, recommendation: dict, research
 
     llm_text = (route_llm("cam_generation", prompt) or "").strip()
     if not llm_text or llm_text.lower() == "llm unavailable":
-        return _fallback_cam_text(company, risk, recommendation, research, observations)
+        return _fallback_cam_text(company, risk, recommendation, structured_synthesis, research, observations)
 
     # Guardrail: if model returns terse or malformed memo, append a detailed fallback block.
     if len(llm_text.split()) < 900:
-        llm_text += "\n\n" + _fallback_cam_text(company, risk, recommendation, research, observations)
+        llm_text += "\n\n" + _fallback_cam_text(company, risk, recommendation, structured_synthesis, research, observations)
 
     return llm_text
 
@@ -443,7 +450,7 @@ def _write_pdf_from_text(pdf: canvas.Canvas, memo_text: str) -> None:
 
         index += 1
 
-def generate_cam_reports(company: dict, risk: dict, recommendation: dict, research: dict, observations: str) -> dict:
+def generate_cam_reports(company: dict, risk: dict, recommendation: dict, structured_synthesis: dict, research: dict, observations: str) -> dict:
     reports_dir = Path("backend/reports")
     reports_dir.mkdir(parents=True, exist_ok=True)
 
@@ -451,7 +458,7 @@ def generate_cam_reports(company: dict, risk: dict, recommendation: dict, resear
     docx_path = reports_dir / f"CAM_{stamp}.docx"
     pdf_path = reports_dir / f"CAM_{stamp}.pdf"
 
-    memo_text = _generate_cam_text(company, risk, recommendation, research, observations)
+    memo_text = _generate_cam_text(company, risk, recommendation, structured_synthesis, research, observations)
 
     doc = Document()
     _set_doc_defaults(doc)

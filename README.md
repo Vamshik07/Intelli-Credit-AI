@@ -2,6 +2,17 @@
 
 AI-powered corporate credit appraisal platform built with FastAPI, LangGraph orchestration, MongoDB persistence, and a React + Vite frontend.
 
+## Quick Backend Command
+
+Run from project root:
+
+```bash
+.venv\Scripts\activate
+uvicorn backend.main:app --reload
+```
+
+Backend URL: `http://127.0.0.1:8000`
+
 ## Stack
 
 Backend:
@@ -128,17 +139,35 @@ npm install
 cd ..
 ```
 
-### 3. One-command run
+## Run Commands
+
+### Backend only
+
+```bash
+.venv\Scripts\activate
+uvicorn backend.main:app --reload
+```
+
+Backend default URL: `http://127.0.0.1:8000`
+
+### Frontend only
+
+```bash
+cd frontend
+npm run dev
+```
+
+Frontend default URL: `http://127.0.0.1:3000`
+
+### Full stack (recommended)
 
 ```bash
 powershell -ExecutionPolicy Bypass -File .\scripts\run-dev.ps1
 ```
 
-This starts:
-- Backend via uvicorn on an auto-selected localhost port.
-- Frontend via Vite on `3000` or next free port.
+This starts backend and frontend together with automatic port handling.
 
-### 4. Install helper script
+### 3. Install helper script
 
 ```bash
 powershell -ExecutionPolicy Bypass -File .\scripts\install-all.ps1
